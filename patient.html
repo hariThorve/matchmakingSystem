@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient - Matchmaking System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 30px;
+    }
+
+    .status.connected {
+      background: #10b981;
+      color: white;
+    }
+
+    .status.disconnected {
+      background: #ef4444;
+      color: white;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #374151;
+      font-weight: 600;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .result.success {
+      background: #d1fae5;
+      border: 2px solid #10b981;
+      display: block;
+    }
+
+    .result.info {
+      background: #dbeafe;
+      border: 2px solid #3b82f6;
+      display: block;
+    }
+
+    .result h3 {
+      margin-bottom: 10px;
+      color: #1f2937;
+    }
+
+    .result p {
+      color: #4b5563;
+      line-height: 1.6;
+    }
+
+    .doctor-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏥 Patient Portal</h1>
+    <div id="status" class="status disconnected">Disconnected</div>
+
+    <form id="requirementForm">
+      <div class="form-group">
+        <label for="patientName">Your Name</label>
+        <input type="text" id="patientName" value="John Doe" required>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Medical Requirement</label>
+        <textarea id="description" placeholder="Describe your medical need..." required>Need consultation for fever and headache</textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="location">Your Location</label>
+        <input type="text" id="location" value="Downtown, 5th Avenue" required>
+      </div>
+
+      <button type="submit" id="submitBtn">Post Requirement</button>
+    </form>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    let ws;
+    let patientId = 'patient_' + Date.now();
+    const statusEl = document.getElementById('status');
+    const resultEl = document.getElementById('result');
+    const form = document.getElementById('requirementForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function connect() {
+      ws = new WebSocket('ws://localhost:8080');
+
+      ws.onopen = () => {
+        console.log('✅ Connected to server');
+        statusEl.textContent = 'Connected';
+        statusEl.className = 'status connected';
+        
+        // Register as patient
+        ws.send(JSON.stringify({
+          type: 'REGISTER',
+          role: 'patient',
+          id: patientId,
+          name: document.getElementById('patientName').value
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('📨 Received:', data);
+
+        switch (data.type) {
+          case 'REGISTERED':
+            console.log('✅ Registered as patient');
+            break;
+
+          case 'REQUEST_POSTED':
+            resultEl.className = 'result info';
+            resultEl.innerHTML = `
+              <h3>✅ Request Posted!</h3>
+              <p>Your requirement has been sent to nearby doctors. Waiting for acceptance...</p>
+            `;
+            break;
+
+          case 'REQUEST_ACCEPTED':
+            console.log(`🎉 Dr. ${data.doctorName} accepted your request!`);
+            resultEl.className = 'result success';
+            resultEl.innerHTML = `
+              <h3>🎉 Match Found!</h3>
+              <p>Your request has been accepted by:</p>
+              <div class="doctor-name">Dr. ${data.doctorName}</div>
+            `;
+            submitBtn.disabled = false;
+            break;
+
+          case 'ERROR':
+            console.error('❌ Error:', data.message);
+            alert('Error: ' + data.message);
+            submitBtn.disabled = false;
+            break;
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('❌ Disconnected from server');
+        statusEl.textContent = 'Disconnected';
+        statusEl.className = 'status disconnected';
+        setTimeout(connect, 3000); // Reconnect after 3 seconds
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      if (ws.readyState !== WebSocket.OPEN) {
+        alert('Not connected to server');
+        return;
+      }
+
+      const description = document.getElementById('description').value;
+      const location = document.getElementById('location').value;
+
+      console.log('📤 Posting requirement...');
+      ws.send(JSON.stringify({
+        type: 'POST_REQUIREMENT',
+        description,
+        location
+      }));
+
+      submitBtn.disabled = true;
+      resultEl.className = 'result';
+      resultEl.innerHTML = '';
+    });
+
+    // Connect on page load
+    connect();
+  </script>
+</body>
+</html>

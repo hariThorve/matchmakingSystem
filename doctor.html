@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor - Matchmaking System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #f5576c;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .status.connected {
+            background: #10b981;
+            color: white;
+        }
+
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #f5576c;
+        }
+
+        .notifications {
+            margin-top: 30px;
+        }
+
+        .notifications h2 {
+            color: #1f2937;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .notification-card {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe4e6 100%);
+            border: 2px solid #f5576c;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notification-card h3 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .notification-card p {
+            color: #4b5563;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .notification-card .location {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .accept-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .accept-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .accept-btn:active {
+            transform: translateY(0);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .alert.success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+        }
+
+        .alert.warning {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>👨‍⚕️ Doctor Portal</h1>
+        <div id="status" class="status disconnected">Disconnected</div>
+
+        <div class="form-group">
+            <label for="doctorName">Doctor Name</label>
+            <input type="text" id="doctorName" value="Dr. Smith" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="location">Your Location</label>
+            <input type="text" id="location" value="Downtown Medical Center" readonly>
+        </div>
+
+        <div id="alerts"></div>
+
+        <div class="notifications">
+            <h2>📬 Incoming Requests</h2>
+            <div id="notificationsList">
+                <div class="empty-state">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
+                        </path>
+                    </svg>
+                    <p>No requests at the moment</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        // Generate unique doctor ID - change this for different doctor instances
+        let doctorId = 'doctor_' + Math.random().toString(36).substr(2, 9);
+        const statusEl = document.getElementById('status');
+        const notificationsListEl = document.getElementById('notificationsList');
+        const alertsEl = document.getElementById('alerts');
+        const doctorNameEl = document.getElementById('doctorName');
+
+        function connect() {
+            ws = new WebSocket('ws://localhost:8080');
+
+            ws.onopen = () => {
+                console.log('✅ Connected to server');
+                statusEl.textContent = 'Connected';
+                statusEl.className = 'status connected';
+
+                // Register as doctor
+                ws.send(JSON.stringify({
+                    type: 'REGISTER',
+                    role: 'doctor',
+                    id: doctorId,
+                    name: doctorNameEl.value,
+                    location: document.getElementById('location').value
+                }));
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('📨 Received:', data);
+
+                switch (data.type) {
+                    case 'REGISTERED':
+                        console.log('✅ Registered as doctor');
+                        showAlert('success', '✅ Successfully registered and ready to receive requests');
+                        break;
+
+                    case 'NEW_REQUEST':
+                        console.log(`🔔 NEW REQUEST from ${data.patientName}!`);
+                        console.log(`   Description: ${data.description}`);
+                        console.log(`   Location: ${data.location}`);
+                        showNotification(data);
+                        break;
+
+                    case 'ACCEPTANCE_CONFIRMED':
+                        console.log('✅ You accepted the request!');
+                        showAlert('success', `✅ ${data.message}`);
+                        clearNotifications();
+                        break;
+
+                    case 'REQUEST_ALREADY_ACCEPTED':
+                        console.log(`❌ Request already accepted by ${data.acceptedBy}`);
+                        showAlert('warning', `⚠️ ${data.message}`);
+                        clearNotifications();
+                        break;
+
+                    case 'ERROR':
+                        console.error('❌ Error:', data.message);
+                        showAlert('error', '❌ ' + data.message);
+                        break;
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('❌ Disconnected from server');
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'status disconnected';
+                setTimeout(connect, 3000); // Reconnect after 3 seconds
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function showNotification(data) {
+            notificationsListEl.innerHTML = `
+        <div class="notification-card">
+          <h3>🚨 New Patient Request</h3>
+          <p><strong>Patient:</strong> ${data.patientName}</p>
+          <p><strong>Requirement:</strong> ${data.description}</p>
+          <p class="location">📍 ${data.location}</p>
+          <button class="accept-btn" onclick="acceptRequest('${data.requestId}')">
+            Accept Request
+          </button>
+        </div>
+      `;
+        }
+
+        function clearNotifications() {
+            notificationsListEl.innerHTML = `
+        <div class="empty-state">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+          </svg>
+          <p>No requests at the moment</p>
+        </div>
+      `;
+        }
+
+        function acceptRequest(requestId) {
+            if (ws.readyState !== WebSocket.OPEN) {
+                alert('Not connected to server');
+                return;
+            }
+
+            console.log('📤 Accepting request:', requestId);
+            ws.send(JSON.stringify({
+                type: 'ACCEPT_REQUEST',
+                requestId
+            }));
+        }
+
+        function showAlert(type, message) {
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.textContent = message;
+            alertsEl.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Connect on page load
+        connect();
+    </script>
+</body>
+
+</html>

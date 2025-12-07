@@ -1,0 +1,20 @@
+{
+    "name": "matchmaking-system",
+    "version": "1.0.0",
+    "description": "Simple WebSocket-based matchmaking system for patients and doctors",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node server.js"
+    },
+    "keywords": [
+        "websocket",
+        "matchmaking",
+        "real-time"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "ws": "^8.14.2"
+    }
+}
