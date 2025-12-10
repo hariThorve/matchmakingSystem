@@ -49,9 +49,8 @@ Open the following files in your web browser:
 
 1. **Patient Client**: Open `patient.html` in one browser tab
 2. **Doctor 1**: Open `doctor.html` in a second browser tab
-3. **Doctor 2**: Open `doctor.html` in a third browser tab (or new window)
+3. **Doctor 2**: Open `doctor2.html` in a third browser tab (or new window)
 
-> **Tip**: You can open `doctor.html` in different browsers or incognito windows to simulate multiple doctors.
 
 ## How to Test
 
