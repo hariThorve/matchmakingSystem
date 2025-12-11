@@ -35,7 +35,7 @@ This will install the `ws` (WebSocket) library.
 ### 2. Start the WebSocket Server
 
 ```bash
-npm start
+node server.js
 ```
 
 You should see:
